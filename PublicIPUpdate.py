@@ -63,5 +63,12 @@ if __name__ == "__main__":
     config = load_config('./config.json')
     if config:
         current_ip = get_current_public_ip()
-        if current_ip:
-            update_route53_record(config, current_ip)
+        if current_ip !=config['current_ip']:
+            if current_ip:
+                update_route53_record(config, current_ip)
+                config['current_ip'] = current_ip
+                with open('./config.json', 'w') as file:
+                    json.dump(config, file)
+                    
+        else:
+            print("IP address has not changed.")
