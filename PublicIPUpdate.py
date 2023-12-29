@@ -1,11 +1,25 @@
 import boto3
 import json
 import requests
+import datetime
 
-# Define your Route 53 settings
-domain_name = ''
-record_name = ''
-hosted_zone_id = ''
+#log_file as a global variable.
+log_file=''
+
+#Open a log file
+def open_log(FileName):
+    global log_file
+    log_file = open(FileName, 'a')
+    return log_file
+
+#Write message to log file
+def write_log(message):
+    global log_file
+    #Get the current date and time
+    CurrentDate = datetime.datetime.now()
+    CurrentDate = CurrentDate.strftime("%Y-%m-%d %H:%M:%S")
+    log_file.write(CurrentDate+": "+message + '\n')
+
 
 # Function to load configuration from a JSON file
 def load_config(filename):
@@ -14,10 +28,10 @@ def load_config(filename):
             config = json.load(file)
         return config
     except FileNotFoundError:
-        print(f"Config file '{filename}' not found.")
+        write_log(f"Config file '{filename}' not found.")
         return None
     except Exception as e:
-        print(f"Error loading config: {e}")
+        write_log(f"Error loading config: {e}")
         return None
 
 
@@ -28,7 +42,7 @@ def get_current_public_ip():
         if response.status_code == 200:
             return response.json().get('ip')
     except Exception as e:
-        print(f"Failed to retrieve public IP address: {e}")
+        write_log(f"Failed to retrieve public IP address: {e}")
     return None
 
 # Update the Route 53 record
@@ -55,12 +69,14 @@ def update_route53_record(config, new_ip):
                 ]
             }
         )
-        print(f"Route 53 Record Updated: {response}")
+        write_log(f"Route 53 Record Updated: {response}")
     except Exception as e:
-        print(f"Failed to update Route 53 record: {e}")
+        write_log(f"Failed to update Route 53 record: {e}")
 
 if __name__ == "__main__":
     config = load_config('./config.json')
+    open_log(config['logfilename'])
+    write_log("Starting Public IP Update")
     if config:
         current_ip = get_current_public_ip()
         if current_ip !=config['current_ip']:
@@ -71,4 +87,5 @@ if __name__ == "__main__":
                     json.dump(config, file)
                     
         else:
-            print("IP address has not changed.")
+            write_log("IP address has not changed.")
+    write_log("Public IP Update Complete")
